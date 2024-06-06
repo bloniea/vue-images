@@ -16,7 +16,7 @@ export const config = {
   avatar: 'https://images.bloniea.com/images1/avatar.png',
   defaultCategoryId: 1,
   copyright: `©2023-${new Date().getFullYear()} bloniea. All rights reserved.`,
-  subsectionSize: 1, //分段上传,每段大小,单位mb
+  subsectionSize: 4, //分段上传,每段大小,单位mb
   timeout: 180000, //请求超时时间,单位毫秒
   retry: 4 //请求失败重试次数
 }
