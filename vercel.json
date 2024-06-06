@@ -3,7 +3,7 @@
   "rewrites": [
     {
       "source": "/api/:match*",
-      "destination": "http://127.0.0.1:3000/image/v1/:match*"
+      "destination": "https://blog.api.bloniea.com/image/v1/:match*"
     },
     {
       "source": "/(.*)",
