@@ -1,7 +1,6 @@
 import { ref, computed, reactive } from 'vue'
 import { defineStore } from 'pinia'
 import type { User } from '@/utils/types'
-import type T from '@/t.vue'
 
 export const useCounterStore = defineStore('counter', () => {
   const count = ref(0)
