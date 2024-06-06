@@ -1,0 +1,148 @@
+// @import '../../assets/stylus/variable.styl'
+.header
+  width 100%
+  margin 0 auto
+  height 100%
+
+  @media (min-width 1200px)
+    width 1170px
+
+  .header-container
+    box-sizing border-box
+    height 100%
+    width 100%
+    display block
+    display flex
+    justify-content space-between
+    padding 0 2rem
+    max-width 140rem
+    margin 0 auto
+
+    .name
+      overflow hidden
+      white-space nowrap
+      cursor pointer
+      user-select none
+      line-height 60px
+      font-weight bold
+      font-size 2rem
+      background-image linear-gradient($titleGradient)
+      background-image -moz-linear-gradient($titleGradient)
+      background-image -webkit-linear-gradient($titleGradient)
+      background-image -ms-linear-gradient($titleGradient)
+      text-fill-color transparent
+      -webkit-text-fill-color transparent
+      -moz-text-fill-color transparent
+      -ms-text-fill-color transparent
+      background-clip text
+      -webkit-background-clip text
+      -moz-background-clip text
+      -ms-background-clip text
+      background-size 200% 100%
+      animation masked-animation 4s infinite linear
+
+      @keyframes masked-animation
+        0%
+          background-position 0 0
+
+        100%
+          background-position -100% 0
+
+      @media (max-width 557px)
+        line-height 40px
+
+    .btns
+      display flex
+      line-height 6rem
+      align-items center
+
+      .item
+        margin-left 1rem
+        display flex
+
+      .search
+        width 2rem
+        height 2rem
+        cursor pointer
+
+        &:hover
+          color $hoverColor
+
+      .select
+        width 16rem
+        font-size 1.6rem
+        margin 1rem
+
+        :deep(.el-input__wrapper)
+          border-radius 2rem
+
+        :deep(input)
+          // width 5rem
+          // transition width 0.2s
+          &:focus
+            border-color $baseColor
+            width 20rem
+
+        :deep(.el-select__selected-item .el-select__placeholder)
+          font-size 1.6rem
+
+      .login
+        font-size 1.6rem
+        color $baseColor
+        font-weight bold
+        cursor pointer
+
+        &:hover
+          color $hoverColor
+
+      .upload
+        cursor pointer
+        font-size 1.6rem
+
+      .avatar
+        width 5rem
+        height 5rem
+        margin 0.5rem
+        margin-right 1rem
+
+        .el-avatar
+          --el-avatar-size 5rem
+
+      .user
+        font-size 1.6rem
+        color #000
+        line-height 6rem
+        cursor pointer
+
+      .menu
+        .el-icon
+          font-size 2.3rem
+          height 100%
+
+    .setting
+      .error
+        color $errorColor
+        text-align center
+        font-size 1.3rem
+
+    @media screen and (min-width 769px)
+      .btns .app
+        display none
+
+    @media screen and (min-width 1025px)
+      :deep(.el-overlay .el-dialog)
+        --el-dialog-width 40%
+
+    @media screen and (max-width 768px)
+      :deep(.el-overlay .el-dialog)
+        --el-dialog-width 70%
+
+      .btns .pc
+        display none
+
+      .setting
+        :deep(.el-form-item)
+          flex-direction column
+
+          .el-form-item__label
+            justify-content left

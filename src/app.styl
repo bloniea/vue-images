@@ -1,0 +1,103 @@
+// @import '../assets/stylus/variable.styl'
+.home
+    .searchName
+        font-size 2rem
+
+        i
+            color $borderColor
+
+        .del
+            width 2rem
+            height 2rem
+            margin-left 0.2rem
+            cursor pointer
+
+            &:hover
+                color $errorColor
+
+    .images
+        display flex
+        flex-wrap wrap
+        margin 0 auto
+
+        .img
+            width 181px
+            height 181px
+            border 3px solid $borderColor
+            margin 14px 7px
+            box-sizing border-box
+            cursor pointer
+            position relative
+
+            .del
+                position absolute
+                z-index 1
+                right 2px
+                top 2px
+
+                .el-icon
+                    font-size 18px
+
+                    &:hover
+                        color $hoverColor
+
+            .el-image
+                width 100%
+                height 100%
+                position absolute
+
+            .img-title
+                height 20px
+                background rgba(0, 0, 0, 0.3)
+                position absolute
+                bottom 0
+                left 0
+                right 0
+                color #ccc
+                font-size 16px
+                line-height 20px
+                text-align center
+                white-space nowrap /* 禁止文本换行 */
+                overflow hidden /* 溢出部分隐藏 */
+                text-overflow ellipsis /* 使用省略号表示溢出的部分 */
+
+            @media (min-width 990px) and (max-width 1200px)
+                margin 14px 6.5px
+
+            @media (min-width 767px) and (max-width 990px)
+                margin 14px 3.25px
+
+            @media (min-width 557px) and (max-width 767px)
+                margin 14px 2px
+
+            @media (max-width 557px)
+                width 48%
+                height 0
+                margin 8px 1%
+                padding-bottom 46.55%
+                position relative
+
+    :deep(.upload-dialog)
+        // width
+        width 70%
+
+        @media (max-width 767px)
+            width 90%
+
+        @media (max-width 557px)
+            width 96%
+
+        .tabs
+            .image
+                height 300px
+                margin-top 10px
+
+                .el-image
+                    width 100%
+                    height 100%
+
+.home :deep(.addIcon)
+    display flex
+
+    i
+        margin-right 10px

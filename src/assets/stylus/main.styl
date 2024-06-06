@@ -1,0 +1,42 @@
+*
+    padding 0
+    margin 0
+
+html, body
+    width 100%
+    height 100%
+
+body
+    width 100%
+    -webkit-tap-highlight-color transparent
+
+/* 隐藏原生的滚动条 */
+::-webkit-scrollbar
+    // display none /* Chrome Safari */
+
+html
+    font-size 10px !important
+
+@media (min-width 1200px)
+    html
+        font-size 10px !important
+
+/* 在 992 和 1199 像素之间的屏幕里，中等屏幕，分辨率低的 PC */
+@media (min-width 990px) and (max-width 1200px)
+    html
+        font-size 10px !important
+
+/* 在 768 和 991 像素之间的屏幕里，小屏幕，主要是 PAD */
+@media (min-width 767px) and (max-width 990px)
+    html
+        font-size 10px !important
+
+/* 在 480 和 767 像素之间的屏幕里，超小屏幕，主要是手机 */
+@media (min-width 557px) and (max-width 767px)
+    html
+        font-size 8px !important
+
+/* 在小于 480 像素的屏幕，微小屏幕，更低分辨率的手机 */
+@media (max-width 557px)
+    html
+        font-size 6px !important

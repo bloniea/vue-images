@@ -1,0 +1,18 @@
+@import '../../assets/stylus/variable.styl'
+
+.my-page {
+    display flex
+    justify-content center
+    margin-top 20px
+
+    .el-pagination {
+    }
+
+    :deep(.el-pagination) {
+        --el-pagination-hover-color $whiteColor
+        --el-pagination-button-bg-color $baseColor
+        --el-color-primary $borderColor
+        --el-disabled-bg-color #dfbeee
+        --el-text-color-placeholder #979696
+    }
+}
