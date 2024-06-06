@@ -1,21 +1,25 @@
 import qs from 'qs'
 import { httpReq } from './fetch'
 import type { FileData, ImagesData } from './types'
-import { createPinia, setActivePinia } from 'pinia'
 import { useUserStore } from '@/stores/counter'
 import { clearStore, cryptoPassword, delStorage, getStorage, saveStorage } from './functions'
 import { config } from './config'
+import pinia from '@/stores/piniaInstance'
 
-const pinia = createPinia()
-setActivePinia(pinia)
-const userStore = useUserStore()
+const userStore = useUserStore(pinia)
 
 export const setHeaders = (token: string, id?: number) => {
-  const headers = {
-    authorization: 'Bearer ' + token,
+  let headers
+  if (token) {
+    headers = {
+      authorization: 'Bearer ' + token,
 
-    image_user_id: String(id)
+      image_user_id: String(id)
+    }
+  } else {
+    headers = {}
   }
+
   httpReq.fetchOpts = {
     headers: {
       ...headers
@@ -91,7 +95,6 @@ export const loginApi = async (
   data: { username: string; password: string },
   obt = {}
 ): Promise<FetchJson<userData>> => {
-  console.log(data)
   const res = await httpReq.post('/api/login', data, obt)
   const resJson: FetchJson<userData> = await res.json()
   return resJson
@@ -136,7 +139,6 @@ interface SaveReq {
 const refreshToken = async <T>(res: Response): Promise<FetchJson<T>> => {
   const resJson: FetchJson<T> = await res.json()
   if (resJson.status === 401 && resJson.data === 'Token invalid') {
-    console.log('Token invalid')
     const refresh_token = getStorage('refresh_token')
     if (!refresh_token) {
       console.log('refresh_token 不存在')
@@ -167,8 +169,6 @@ const refreshToken = async <T>(res: Response): Promise<FetchJson<T>> => {
       userStore.token = ''
       clearStore()
     }
-
-    console.log(refreshRes)
   }
   delStorage('saveReq')
   return resJson
@@ -186,7 +186,9 @@ export const uploadSubsectionApi = async (
   data: FileData
 ): Promise<FetchJson<UploadData> | null> => {
   if (!data.content) return null
+
   const binaryData = new Uint8Array(data.content as ArrayBuffer)
+
   const size = config.subsectionSize * 1024 * 1024
   const time = String(Date.now())
   // 生成哈希值作为文件唯一id

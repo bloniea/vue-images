@@ -47,7 +47,7 @@ import type { User } from '@/utils/types'
 import { reactive, ref, type Ref } from 'vue'
 import { cryptoPassword, saveStorage } from '@/utils/functions'
 import { loginApi, setHeaders } from '@/utils/fetchApi'
-import { httpReq } from '@/utils/fetch'
+
 const userStore = useUserStore()
 
 const props = defineProps({

@@ -102,7 +102,6 @@ class Bfetch implements BfetchType {
     } catch (err: any) {
       if (err && err.name === 'AbortError') {
         count++
-        console.log(count, this.retry)
         if (count >= this.retry) {
           throw new TimeoutError('Request timeout')
         } else {

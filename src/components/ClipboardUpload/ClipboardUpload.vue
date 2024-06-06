@@ -148,7 +148,7 @@ const startUpload = async (): Promise<any> => {
         ElMessage.error('上传超时')
       }
     } else {
-      console.log('error submit!', fields)
+      console.error('error submit!', fields)
     }
   })
 }

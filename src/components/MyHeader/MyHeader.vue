@@ -136,7 +136,7 @@ import { onMounted, reactive, ref, type Ref } from 'vue'
 import { config } from '@/utils/config'
 import { useUserStore } from '@/stores/counter'
 import type { Category } from '@/utils/types'
-import { getImagesCategories } from '@/utils/fetchApi'
+import { getImagesCategories, setHeaders } from '@/utils/fetchApi'
 import { clearStore } from '@/utils/functions'
 
 const userStore = useUserStore()
@@ -152,6 +152,7 @@ const logout = () => {
   userStore.loginStatus = false
   userStore.token = ''
   userStore.refresh_token = ''
+  setHeaders('')
 }
 
 const showUploadDialog = () => {
