@@ -1,6 +1,5 @@
 <template>
   <div>
-    =
     <el-dialog
       v-model="userStore.uploadDialog"
       title="图片上传"
