@@ -43,7 +43,7 @@ import { useUserStore } from '@/stores/counter'
 import { config } from '@/utils/config'
 import { getCategoryName } from '@/utils/functions'
 import type { FileData } from '@/utils/types'
-import { uploadSubsectionApi } from '@/utils/fetchApi'
+// import { uploadSubsectionApi } from '@/utils/fetchApi'
 import type { FormInstance, FormRules, MessageHandler } from 'element-plus'
 const userStore = useUserStore()
 const upload = reactive({

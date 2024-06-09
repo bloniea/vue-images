@@ -87,7 +87,7 @@ const rules = reactive<FormRules<RuleForm>>({
 const btnloading = ref(false)
 const resetpassSubmit = async (formEl: FormInstance | undefined) => {
   if (!formEl) return
-  await formEl.validate(async (valid, fields) => {
+  await formEl.validate(async (valid) => {
     if (valid) {
       const resetD = {
         oldPassword: await cryptoPassword(ruleForm.oldPassword),

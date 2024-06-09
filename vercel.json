@@ -6,6 +6,10 @@
       "destination": "https://blog.api.bloniea.com/image/v1/:match*"
     },
     {
+      "source": "/upload/:match*",
+      "destination": "https://api.github.com/:match*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/"
     }

@@ -31,9 +31,10 @@ export const cryptoPassword = async (data: string | Uint8Array): Promise<string>
 }
 
 export const clearStore = () => {
-  window.localStorage.removeItem('userInfo')
-  window.localStorage.removeItem('refresh_token')
-  window.localStorage.removeItem('token')
+  delStorage('userInfo')
+  delStorage('refresh_token')
+  delStorage('token')
+  delStorage('upload_token')
 }
 
 export const toNumber = (num: any) => {
@@ -158,4 +159,27 @@ export const setUploadCategoryName = (
     if (obj) file.category_name = obj.name
     return file
   })
+}
+export const createThumbnail = async (base64Data: string) => {
+  // 创建一个 Promise 以等待图片加载完成
+  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image()
+    image.src = base64Data
+    image.onload = () => resolve(image)
+    image.onerror = reject
+  })
+
+  // 创建 Canvas 并绘制图像
+  const canvas = document.createElement('canvas')
+  canvas.width = 400 // 缩略图宽度
+  canvas.height = 400 // 缩略图高度
+  const ctx = canvas.getContext('2d')
+  if (!ctx) {
+    throw new Error('Failed to get 2D context')
+  }
+  ctx.drawImage(img, 0, 0, 400, 400)
+
+  // 将 Canvas 转换为 base64 编码的图片数据
+  const thumbnail = canvas.toDataURL('image/jpeg')
+  return thumbnail
 }

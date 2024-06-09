@@ -1,36 +1,37 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import qs from 'qs'
 import { httpReq } from './fetch'
-import type { FileData, ImagesData } from './types'
-import { useUserStore } from '@/stores/counter'
+import type { FileData, ImagesData, UploadData } from './types'
+
 import { clearStore, cryptoPassword, delStorage, getStorage, saveStorage } from './functions'
 import { config } from './config'
+import { useUserStore } from '@/stores/counter'
 import pinia from '@/stores/piniaInstance'
+import { computed, watch } from 'vue'
 
 const userStore = useUserStore(pinia)
-
-export const setHeaders = (token: string, id?: number) => {
-  let headers
-  if (token) {
-    headers = {
-      authorization: 'Bearer ' + token,
-
-      image_user_id: String(id)
-    }
-  } else {
-    headers = {}
-  }
-
-  httpReq.fetchOpts = {
-    headers: {
-      ...headers
-    },
-    timeout: config.timeout,
-    retry: config.retry
-  }
+// 初始化请求属性
+const token = computed(() => userStore.token)
+const headers: { [key: string]: string } = {
+  'Content-Type': 'application/json; charset=utf-8'
 }
-
 if (userStore.loginStatus && userStore.user) {
-  setHeaders(userStore.token, userStore.user.image_user_id)
+  headers.authorization = 'Bearer ' + token.value
+}
+watch(
+  () => token.value,
+  (n: string) => {
+    if (n) {
+      headers.authorization = 'Bearer ' + n
+    } else {
+      delete headers.authorization
+    }
+  }
+)
+httpReq.fetchOpts = {
+  headers: headers,
+  timeout: config.timeout,
+  retry: config.retry
 }
 
 // api 返回值接口
@@ -84,6 +85,7 @@ interface userData {
   username: string
   token: string
   refresh_token: string
+  github_token: string
 }
 /**
  *
@@ -124,6 +126,7 @@ interface RefreshData {
   token: string
   refresh_token: string
   refresh: number
+  github_token: string
 }
 interface SaveReq {
   type: string
@@ -149,14 +152,15 @@ const refreshToken = async <T>(res: Response): Promise<FetchJson<T>> => {
       {}
     )
     const refreshResJson: FetchJson<RefreshData> = await refreshRes.json()
-    if (refreshResJson.success === 1) {
+    if (refreshResJson.success === 1 && refreshResJson.data) {
       // window.localStorage.setItem('token', refreshResJson.data!.token)
-      saveStorage('token', refreshResJson.data!.token)
-      saveStorage('refresh_token', refreshResJson.data!.refresh_token)
+      saveStorage('token', refreshResJson.data.token)
+      saveStorage('refresh_token', refreshResJson.data.refresh_token)
+      saveStorage('upload_token', refreshResJson.data.github_token)
       // window.localStorage.setItem('refresh_token', refreshResJson.data!.refresh_token)
-      userStore.token = refreshResJson.data!.token
+      // userStore.token = refreshResJson.data.token
+      userStore.stateUpdate('token', refreshResJson.data.token)
       // httpReq.fetchOpts.headers!.authorization = 'Bearer ' + refreshResJson.data!.token
-      setHeaders(refreshResJson.data!.token, userStore.user?.image_user_id)
       const saveReq = <SaveReq | null>getStorage('saveReq')
       if (saveReq) {
         const newRes = await httpReq[saveReq.type](saveReq.url, saveReq.data, saveReq.obt)
@@ -164,9 +168,9 @@ const refreshToken = async <T>(res: Response): Promise<FetchJson<T>> => {
         return newResJson
       }
     } else {
-      userStore.loginStatus = false
-      userStore.user = undefined
-      userStore.token = ''
+      userStore.stateUpdate('token', '')
+      userStore.stateUpdate('loginStatus', false)
+      userStore.stateUpdate('user', undefined)
       clearStore()
     }
   }
@@ -174,60 +178,61 @@ const refreshToken = async <T>(res: Response): Promise<FetchJson<T>> => {
   return resJson
 }
 
-interface UploadData {
-  img_url?: string
-}
 /**
  * 将文件进行分段上传
  * @param data 请求的对象
  * @returns 返回uploadImage方法的响应
  */
-export const uploadSubsectionApi = async (
-  data: FileData
-): Promise<FetchJson<UploadData> | null> => {
-  if (!data.content) return null
+// export const uploadSubsectionApi = async (
+//   data: FileData
+// ): Promise<FetchJson<UploadData> | null> => {
+//   if (!data.content) return null
 
-  const binaryData = new Uint8Array(data.content as ArrayBuffer)
+//   const binaryData = new Uint8Array(data.content as ArrayBuffer)
 
-  const size = config.subsectionSize * 1024 * 1024
-  const time = String(Date.now())
-  // 生成哈希值作为文件唯一id
-  data.hashId = (await cryptoPassword(binaryData)) + '_' + time
-  const len = binaryData.byteLength
-  // 有多少段
-  data.length = Math.ceil(len / size)
+//   const size = config.subsectionSize * 1024 * 1024
+//   const time = String(Date.now())
+//   // 生成哈希值作为文件唯一id
+//   data.hashId = (await cryptoPassword(binaryData)) + '_' + time
+//   const len = binaryData.byteLength
+//   // 有多少段
+//   data.length = Math.ceil(len / size)
 
-  let lastResult: FetchJson<UploadData> | null = null
-  let number: number = 0
-  for (let i = 0; i < len; i += size) {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { ['temp']: temp, ...newData } = data
-    newData.content = binaryData.slice(i, i + size).buffer
-    newData.number = ++number
-    const result = await uploadImage(newData)
-    if (result.success !== 1) return result
-    lastResult = result
-  }
-  return lastResult
-}
+//   let lastResult: FetchJson<UploadData> | null = null
+//   let number: number = 0
+//   for (let i = 0; i < len; i += size) {
+//     // eslint-disable-next-line @typescript-eslint/no-unused-vars
+//     const { ['temp']: temp, ...newData } = data
+//     newData.content = binaryData.slice(i, i + size).buffer
+//     newData.number = ++number
+//     const result = await uploadImageApi(newData)
+//     if (result.success !== 1) return result
+//     lastResult = result
+//   }
+//   return lastResult
+// }
 
 /**
  * 将键值对对象转换为formData对象
  * @param data 键值对对象
  * @returns 返回formData对象
  */
-const convertToFormData = (data: { [key: string]: any }): FormData => {
-  const formData = new FormData()
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { ['content']: content, ...otherData } = data
-  for (const key in otherData) {
-    if (Object.prototype.hasOwnProperty.call(otherData, key)) {
-      formData.append(key, otherData[key])
-    }
-  }
-  const blob = new Blob([content])
-  formData.append('content', blob)
-  return formData
+// const convertToFormData = (data: { [key: string]: any }): FormData => {
+//   const formData = new FormData()
+//   // eslint-disable-next-line @typescript-eslint/no-unused-vars
+//   const { ['content']: content, ...otherData } = data
+//   for (const key in otherData) {
+//     if (Object.prototype.hasOwnProperty.call(otherData, key)) {
+//       formData.append(key, otherData[key])
+//     }
+//   }
+//   const blob = new Blob([content])
+//   formData.append('content', blob)
+//   return formData
+// }
+
+interface UploadRes {
+  img_url?: string
 }
 /**
  *
@@ -235,14 +240,15 @@ const convertToFormData = (data: { [key: string]: any }): FormData => {
  * @param obt 请求属性
  * @returns 返回响应数据
  */
-export const uploadImage = async (data: FileData, obt = {}): Promise<FetchJson<UploadData>> => {
-  const newData = convertToFormData(data)
+export const uploadImageApi = async (data: UploadData, obt = {}): Promise<FetchJson<UploadRes>> => {
+  // const newData = convertToFormData(data)
   const url = '/api/upload'
-  const res = await httpReq.post(url, newData, {})
-  const obj = { type: 'post', url, formData: newData, obt }
+  const res = await httpReq.post(url, data, {})
+  const obj = { type: 'post', url, data, obt }
   saveStorage('saveReq', obj)
-  return refreshToken<UploadData>(res)
+  return refreshToken<UploadRes>(res)
 }
+
 interface delParamsData {
   owner: string
   repo: string

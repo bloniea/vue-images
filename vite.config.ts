@@ -55,6 +55,14 @@ export default defineConfig({
         timeout: 60000, // 增加超时时间（以毫秒为单位），例如 60 秒
         proxyTimeout: 60000, // 增加代理超时时间
         ws: false
+      },
+      '/upload': {
+        target: 'https://api.github.com/',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/upload/, ''),
+        timeout: 60000, // 增加超时时间（以毫秒为单位），例如 60 秒
+        proxyTimeout: 60000, // 增加代理超时时间
+        ws: false
       }
     }
   }

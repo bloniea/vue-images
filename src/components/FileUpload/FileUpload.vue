@@ -48,7 +48,7 @@
 import { useUserStore } from '@/stores/counter'
 import { reactive, ref, watch } from 'vue'
 import { config } from '@/utils/config'
-import { getCategoryName, setUploadCategoryName } from '@/utils/functions'
+import { createThumbnail, getCategoryName, getName, setUploadCategoryName } from '@/utils/functions'
 import type { FileData } from '@/utils/types'
 import {
   CopyDocument,
@@ -59,8 +59,10 @@ import {
   Check,
   CloseBold
 } from '@element-plus/icons-vue'
-import { uploadSubsectionApi } from '@/utils/fetchApi'
 import type { MessageHandler } from 'element-plus'
+import { delImageApi, uploadImageFileApi } from '@/utils/uploadApi'
+import { uploadImageApi } from '@/utils/fetchApi'
+
 const userStore = useUserStore()
 
 const upload = reactive({
@@ -112,15 +114,15 @@ const selectFile = async (e: Event) => {
 const processFile = async (file: File): Promise<void> => {
   return new Promise<void>((resolve) => {
     const reader = new FileReader()
-    reader.readAsArrayBuffer(file)
+    // reader.readAsArrayBuffer(file)
+    reader.readAsDataURL(file)
     reader.onload = async () => {
       const obj = {
-        owner: config.owner,
-        repo: config.repo,
         path: config.path,
+
         thumbnailPath: config.thumbnailPath,
-        message: config.message,
         content: reader.result,
+        thumbnailContent: '',
         category_name: getCategoryName(upload.uploadCategoryId, userStore.categories),
         category_id: upload.uploadCategoryId,
         name: file.name,
@@ -166,17 +168,77 @@ const startUpload = async (): Promise<MessageHandler | undefined | void> => {
 const uploadFile = async (item: FileData): Promise<void> => {
   item.category_id = upload.uploadCategoryId
   item.temp!.loading = status.upload
-  const res = await uploadSubsectionApi(item)
-  if (res && res.success === 1) {
-    item.temp!.loading = status.success
-    item.uploadedUrl = res.data && res.data.img_url
-    item.input = true
-    upload.statusCode = true
-  } else {
-    item.temp!.loading = status.err
-    item.input = false
+  item.name = getName(item.name)
+
+  try {
+    if (!item.content || typeof item.content !== 'string') {
+      console.error('FileReader result is not a string')
+      throw ElMessage.error('未知错误,请重试')
+    }
+    const thumbnailImage = await createThumbnail(item.content)
+    const thumbnailData = {
+      content: thumbnailImage.split(',')[1],
+      message: 'upload'
+    }
+    // 缩略图上传
+    const thumbnailUrl = `${config.thumbnailPath}/${item.category_name}/${item.name}.jpeg`
+    const thumbnaiRes = await uploadImageFileApi(thumbnailUrl, thumbnailData)
+    if (thumbnaiRes.code !== 201) {
+      throw ElMessage.error('上传超时')
+    }
+    // 上传原图
+    const url = `${config.path}/${item.category_name}/${item.name}.${item.type}`
+    const data = {
+      content: (item.content as string).split(',')[1],
+      message: 'upload'
+    }
+    const res = await uploadImageFileApi(url, data)
+    const delThumbnailData = {
+      message: 'del Thumbnail',
+      sha: thumbnaiRes.content.sha
+    }
+    if (res.code !== 201) {
+      delImageApi(thumbnailUrl, delThumbnailData)
+      throw ElMessage.error('上传超时')
+    }
+    const uploadReq = {
+      name: item.name,
+      path: url,
+      sha: res.content.sha,
+      thumbnailPath: thumbnailUrl,
+      thumbnailSha: thumbnaiRes.content.sha,
+      category_id: upload.uploadCategoryId as number
+    }
+    const uploadRes = await uploadImageApi(uploadReq)
+    if (uploadRes.success === 1) {
+      upload.statusCode = true
+    } else {
+      const delSourceData = {
+        message: 'del image',
+        sha: res.content.sha
+      }
+      upload.statusCode = false
+      await delImageApi(thumbnailUrl, delThumbnailData)
+      await delImageApi(url, delSourceData)
+    }
+  } catch (error) {
+    console.error(error)
     upload.statusCode = false
+    ElMessage.error('未知错误,请重试')
   }
+
+  // console.log(res)
+  // const res = await uploadSubsectionApi(item)
+  // if (res && res.success === 1) {
+  //   item.temp!.loading = status.success
+  //   item.uploadedUrl = res.data && res.data.img_url
+  //   item.input = true
+  //   upload.statusCode = true
+  // } else {
+  //   item.temp!.loading = status.err
+  //   item.input = false
+  //   upload.statusCode = false
+  // }
 }
 const clearFiles = () => {
   uploader.value && (uploader.value.value = '')

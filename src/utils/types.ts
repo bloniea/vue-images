@@ -20,12 +20,10 @@ export interface ImagesData {
   thumbnailsha: string
 }
 export interface FileData {
-  owner: string
-  repo: string
   path: string
   thumbnailPath: string
-  message: string
   content: string | ArrayBuffer | null
+  thumbnailContent: string
   category_name: string
   category_id: number | null
   name: string
@@ -40,3 +38,12 @@ export interface FileData {
   input?: boolean
   uploadedUrl?: string
 }
+export interface UploadData {
+  name: string
+  path: string
+  sha: string
+  thumbnailPath: string
+  thumbnailSha: string
+  category_id: number
+}
+export interface UploadFile {}

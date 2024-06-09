@@ -44,18 +44,22 @@
 import { type FormInstance, type FormRules } from 'element-plus'
 import { useUserStore } from '@/stores/counter'
 import type { User } from '@/utils/types'
-import { reactive, ref, type Ref } from 'vue'
+import { reactive, ref } from 'vue'
 import { cryptoPassword, saveStorage } from '@/utils/functions'
-import { loginApi, setHeaders } from '@/utils/fetchApi'
+import { loginApi } from '@/utils/fetchApi'
 
 const userStore = useUserStore()
 
-const props = defineProps({
-  loginDialog: Boolean
+defineProps({
+  loginDialog: {
+    tyep: Boolean,
+    default: false
+  }
 })
 const emit = defineEmits(['close'])
 
 const close = (formEl: FormInstance | undefined) => {
+  refreshCode()
   if (!formEl) return
   formEl.resetFields()
   emit('close')
@@ -63,16 +67,16 @@ const close = (formEl: FormInstance | undefined) => {
 
 const identifyCodes = 'abcdefghijklnmopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'
 // 随机数
-const randomNum = (min: number, max: number) => {
+const randomNum = (min: number, max: number): number => {
   return Math.floor(Math.random() * (max - min) + min)
 }
 // 刷新
-const refreshCode = () => {
+const refreshCode = (): void => {
   identifyCode.value = ''
   identifyCode.value = makeCode(identifyCodes, 4)
 }
 // 生成验证码
-const makeCode = (o: string, l: number) => {
+const makeCode = (o: string, l: number): string => {
   let code = ''
   for (let i = 0; i < l; i++) {
     code += o[randomNum(0, o.length)]
@@ -88,9 +92,9 @@ interface RuleForm {
 }
 const ruleFormRef = ref<FormInstance>()
 const ruleForm = reactive({
-  username: '',
-  password: '',
-  identifyCode: ''
+  username: 'admin',
+  password: '123456',
+  identifyCode: identifyCode.value
 })
 
 const validateIdentifyCode = (rule: any, value: any, callback: any) => {
@@ -127,30 +131,21 @@ const submitForm = async (formEl: FormInstance | undefined) => {
 
       const login = await loginApi(loginD)
       btnLoading.value = false
-      if (login.success === 1) {
-        saveStorage('token', login.data?.token)
-        saveStorage('refresh_token', login.data!.refresh_token)
+      if (login.success === 1 && login.data) {
+        saveStorage('token', login.data.token)
+        saveStorage('refresh_token', login.data.refresh_token)
         saveStorage('userInfo', {
-          image_user_id: login.data!.image_user_id,
-          username: login.data!.username
+          image_user_id: login.data.image_user_id,
+          username: login.data.username
         })
-        // localStorage.setItem('token', 'Bearer ' + login.data?.token)
-        // localStorage.setItem('refresh_token', 'Bearer ' + login.data?.refresh_token)
-        // localStorage.setItem(
-        //   'userInfo',
-        //   JSON.stringify({
-        //     image_user_id: login.data?.image_user_id,
-        //     username: login.data?.username
-        //   })
-        // )
-        userStore.loginStatus = true
-        userStore.user = {
+        saveStorage('upload_token', login.data.github_token)
+        userStore.stateUpdate('loginStatus', true)
+        userStore.stateUpdate('user', {
           image_user_id: login.data!.image_user_id,
           username: login.data!.username
-        } as User
-
-        userStore.token = login.data!.token
-        setHeaders(login.data!.token, login.data!.image_user_id)
+        } as User)
+        userStore.stateUpdate('token', login.data.token)
+        userStore.stateUpdate('upload_token', login.data.github_token)
         formEl.resetFields()
         emit('close')
       } else {

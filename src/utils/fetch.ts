@@ -154,7 +154,7 @@ class Bfetch implements BfetchType {
     return await this.create(url, {
       ...opts,
       method: 'PUT',
-      body: JSON.stringify(data)
+      body: data instanceof FormData ? data : JSON.stringify(data)
     })
   }
   private deletePropertyAndReturn = <T, K extends keyof T>(obj: T, prop: K): T[K] | undefined => {
@@ -176,4 +176,4 @@ class TimeoutError extends Error {
 }
 
 export const httpReq = new Bfetch()
-export default Bfetch as unknown as BfetchType
+export default Bfetch

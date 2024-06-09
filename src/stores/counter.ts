@@ -25,6 +25,7 @@ interface State {
   keyWord: string | null
   searchCategoryId: number
   uploadDialog: boolean
+  upload_token: string
 }
 export const useUserStore = defineStore('user', {
   state: (): State => {
@@ -33,10 +34,13 @@ export const useUserStore = defineStore('user', {
     const user = window.localStorage.getItem('userInfo')
     const refresh_token = window.localStorage.getItem('refresh_token')
     const token = window.localStorage.getItem('token')
+    const upload_token = window.localStorage.getItem('upload_token')
     if (
       user &&
       user !== 'undefined' &&
-      ((token && token !== 'undefined') || (refresh_token && refresh_token !== 'undefined'))
+      ((token && token !== 'undefined') || (refresh_token && refresh_token !== 'undefined')) &&
+      upload_token &&
+      upload_token !== 'undefined'
     ) {
       userInfo = JSON.parse(user)
       loginStatus = true
@@ -55,12 +59,19 @@ export const useUserStore = defineStore('user', {
       categoryId: 0 as number | null,
       keyWord: null as string | null,
       searchCategoryId: 0 as number,
-      uploadDialog: false as boolean
+      uploadDialog: false as boolean,
+      upload_token: (upload_token && upload_token !== 'undefined' ? upload_token : '') as string
     })
   },
   actions: {
     stateUpdate<K extends keyof State>(name: K, val: State[K]) {
       this.$state[name] = val
+    },
+    clearLoginStatus() {
+      this.stateUpdate('loginStatus', false)
+      this.stateUpdate('token', 'false')
+      this.stateUpdate('user', undefined)
+      this.stateUpdate('upload_token', '')
     }
   }
 })

@@ -92,7 +92,7 @@ const updateValue = (btn: boolean) => {
 const fileUploadRef = ref<InstanceType<typeof FileUpload> | null>(null)
 const clipboardUploadRef = ref<InstanceType<typeof ClipboardUpload> | null>(null)
 const startUpload = () => {
-  upload.btnloading = true
+  // upload.btnloading = true
   const type = upload.uploadMode
   if (type === 'file-upload') {
     fileUploadRef.value && fileUploadRef.value.startUpload()
