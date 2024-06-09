@@ -206,7 +206,8 @@ export const uploadFile = async (
 ): Promise<boolean> => {
   item.category_id = id
   item.temp && (item.temp.loading = status.upload)
-  item.name = getName(item.name)
+  // item.name = getName(item.name)
+  const pathName = getName(item.name)
   // 保存上传成功响应
   let thumbnaiRes: UploadRes | null = null
   let res: UploadRes | null = null
@@ -226,13 +227,13 @@ export const uploadFile = async (
       message: 'upload'
     }
     // 缩略图上传
-    thumbnailUrl = `${config.thumbnailPath}/${item.category_name}/${item.name}.jpeg`
+    thumbnailUrl = `${config.thumbnailPath}/${item.category_name}/${pathName}.jpeg`
     thumbnaiRes = await uploadImageFileApi(thumbnailUrl, thumbnailData)
     if (!thumbnaiRes || thumbnaiRes.code !== 201) {
       throw (errTip = ElMessage.error('上传超时'))
     }
     // 上传原图
-    url = `${config.path}/${item.category_name}/${item.name}.${item.type}`
+    url = `${config.path}/${item.category_name}/${pathName}.${item.type}`
     const data = {
       content: (item.content as string).split(',')[1],
       message: 'upload'
@@ -244,7 +245,7 @@ export const uploadFile = async (
       throw (errTip = ElMessage.error('上传超时'))
     }
     const uploadReq = {
-      name: item.name,
+      name: item.name.split('.')[0],
       path: url,
       sha: res.content.sha,
       thumbnailPath: thumbnailUrl,
