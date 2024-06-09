@@ -147,6 +147,7 @@ const startUpload = async (): Promise<any> => {
         //   file.input = true
         //   emit('successUpload', [file], true)
         // } else {
+
         //   file.input = false
         //   ElMessage.error('上传超时')
         // }
