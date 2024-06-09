@@ -92,9 +92,9 @@ interface RuleForm {
 }
 const ruleFormRef = ref<FormInstance>()
 const ruleForm = reactive({
-  username: 'admin',
-  password: '123456',
-  identifyCode: identifyCode.value
+  username: '',
+  password: '',
+  identifyCode: ''
 })
 
 const validateIdentifyCode = (rule: any, value: any, callback: any) => {
