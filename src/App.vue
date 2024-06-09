@@ -63,6 +63,7 @@ import { delImageApi, getImagesApi } from './utils/fetchApi'
 import { config } from '@/utils/config'
 import { CopyDocument, Delete, Close } from '@element-plus/icons-vue'
 import { CloseBold } from '@element-plus/icons-vue'
+import { deleteImage, switchCategory } from './utils/functions'
 const userStore = useUserStore()
 const loading: Ref<boolean> = ref(true)
 const im = '@/assets/load.gif'
@@ -101,6 +102,7 @@ const issetUpload = (id: number) => {
   images.query.category_id = id
   images.query.pagenum = 1
   userStore.categoryId = id
+  switchCategory(id)
   getImages()
 }
 watch(
@@ -140,14 +142,19 @@ const delImage = async (item: ImagesData) => {
         thumbnailSha: item.thumbnailsha,
         sha: item.sha
       }
-      const res = await delImageApi(item.image_id, params)
-      if (res.success === 1) {
+      const res = await delImageApi(item.image_id)
+      if (res.success === 1 && res.status === 200) {
         if (Math.ceil((images.total - 1) / images.query.pagesize) < images.query.pagenum) {
           images.query.pagenum--
         }
         getImages()
         ElMessage.closeAll()
         ElMessage.success('删除成功')
+        await deleteImage(item.thumbnailpath, item.thumbnailsha, 'del Thumbnail')
+        await deleteImage(item.path, item.sha, 'del image')
+      } else if (res.success === 0 && res.status === 404) {
+        ElMessage.closeAll()
+        ElMessage.success('数据已不存在')
       } else {
         ElMessage.closeAll()
         ElMessage.success('网络超时')
@@ -156,7 +163,7 @@ const delImage = async (item: ImagesData) => {
     .catch(() => {
       ElMessage({
         type: 'info',
-        message: 'Delete canceled'
+        message: '取消删除'
       })
     })
 }

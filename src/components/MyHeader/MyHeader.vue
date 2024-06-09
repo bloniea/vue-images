@@ -137,7 +137,7 @@ import { config } from '@/utils/config'
 import { useUserStore } from '@/stores/counter'
 import type { Category } from '@/utils/types'
 import { getImagesCategories } from '@/utils/fetchApi'
-import { clearStore } from '@/utils/functions'
+import { clearStore, switchCategory } from '@/utils/functions'
 
 const userStore = useUserStore()
 
@@ -149,7 +149,6 @@ const login = () => {
 
 const logout = () => {
   clearStore()
-  userStore.clearLoginStatus()
 }
 
 const showUploadDialog = () => {
@@ -200,19 +199,6 @@ const getCategories = async () => {
       userStore.categoryId = config.defaultCategoryId
     }
   }
-}
-// 切换分类更改路径
-const switchCategory = (id: number | string) => {
-  if (isNaN(Number(id))) return
-  const category = userStore.categories.find((item: Category) => item.id === id)
-  if (!category) return
-  const params = new URLSearchParams(window.location.search)
-  params.set('id', String(category.id)) //
-  params.set('category', category.name) // 添加或更新参数
-  const newUrl = `${window.location.pathname}?${params.toString()}`
-
-  // 更新 URL 不刷新页面
-  history.replaceState(null, '', newUrl)
 }
 
 const searchDialogForm: Ref<boolean> = ref(false)

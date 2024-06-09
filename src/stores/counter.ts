@@ -66,12 +66,6 @@ export const useUserStore = defineStore('user', {
   actions: {
     stateUpdate<K extends keyof State>(name: K, val: State[K]) {
       this.$state[name] = val
-    },
-    clearLoginStatus() {
-      this.stateUpdate('loginStatus', false)
-      this.stateUpdate('token', 'false')
-      this.stateUpdate('user', undefined)
-      this.stateUpdate('upload_token', '')
     }
   }
 })

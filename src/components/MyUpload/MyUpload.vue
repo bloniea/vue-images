@@ -21,7 +21,11 @@
           ></FileUpload>
         </el-tab-pane>
         <el-tab-pane label="剪贴板方式上传" name="clipboard-upload">
-          <ClipboardUpload ref="clipboardUploadRef" @updateValue="updateValue"></ClipboardUpload>
+          <ClipboardUpload
+            ref="clipboardUploadRef"
+            @updateValue="updateValue"
+            @successUpload="successUpload"
+          ></ClipboardUpload>
         </el-tab-pane>
       </el-tabs>
 
@@ -68,7 +72,7 @@
 
 <script lang="ts" setup>
 import { useUserStore } from '@/stores/counter'
-import { h, reactive, ref, render } from 'vue'
+import { computed, h, reactive, ref, render, watch } from 'vue'
 import FileUpload from '@/components/FileUpload/FileUpload.vue'
 import ClipboardUpload from '@/components/ClipboardUpload/ClipboardUpload.vue'
 import type { FileData } from '@/utils/types'
@@ -108,6 +112,7 @@ const successUpload = (files: FileData[], status: boolean, id: number) => {
   upload.uploadCategoryId = id
 }
 const emit = defineEmits(['issetUpload'])
+// 关闭
 const closeUpload = () => {
   userStore.stateUpdate('uploadDialog', false)
   fileUploadRef.value && fileUploadRef.value.clearFiles()
@@ -162,6 +167,17 @@ const copyUrl = async (textToCopy: string) => {
     return ElMessage.error('复制失败,手动复制吧')
   }
 }
+
+const uploadDialog = computed(() => userStore.uploadDialog)
+watch(
+  () => uploadDialog.value,
+  (n: boolean) => {
+    if (n === false) {
+      fileUploadRef.value && fileUploadRef.value.clearFiles()
+      clipboardUploadRef.value && clipboardUploadRef.value.clearFiles()
+    }
+  }
+)
 </script>
 
 <style lang="stylus" scoped>

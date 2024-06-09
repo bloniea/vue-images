@@ -4,6 +4,7 @@ import pinia from '@/stores/piniaInstance'
 import { computed, watch } from 'vue'
 import { config } from './config'
 import qs from 'qs'
+
 const http = new httpFetch()
 const userStore = useUserStore(pinia)
 // 初始化请求属性
@@ -32,7 +33,7 @@ interface UploadContent {
   content: string
   message: string
 }
-interface UploadRes {
+export interface UploadRes {
   content: {
     sha: string
     path: string
@@ -44,7 +45,8 @@ export const uploadImageFileApi = async (url: string, data: UploadContent): Prom
   url = `${apiUrl}/contents/${url}`
   const res = await http.put(url, data)
   const resJson = await res.json()
-  return <UploadRes>{ code: res.status, ...resJson }
+  const returnData = <UploadRes>{ code: res.status, ...resJson }
+  return returnData
 }
 
 interface DeleteContent {

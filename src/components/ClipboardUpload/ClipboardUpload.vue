@@ -41,17 +41,16 @@
 import { reactive, ref } from 'vue'
 import { useUserStore } from '@/stores/counter'
 import { config } from '@/utils/config'
-import { getCategoryName } from '@/utils/functions'
+import { getCategoryName, uploadFile } from '@/utils/functions'
 import type { FileData } from '@/utils/types'
 // import { uploadSubsectionApi } from '@/utils/fetchApi'
-import type { FormInstance, FormRules, MessageHandler } from 'element-plus'
+import type { FormInstance, FormRules } from 'element-plus'
 const userStore = useUserStore()
 const upload = reactive({
   uploadCategoryId: null as number | null,
   dataVal: '',
   btn: false,
-  files: [] as FileData[],
-  statusCode: false
+  files: [] as FileData[]
 })
 const ruleFormRef = ref<FormInstance>()
 interface RuleForm {
@@ -65,7 +64,7 @@ const uploadForm = reactive<RuleForm>({
   imageUrl: ''
 })
 const rules = reactive<FormRules<RuleForm>>({
-  categoryId: [{ required: true, message: '请选择分类', trigger: 'blur' }]
+  categoryId: [{ required: true, message: '请选择分类', trigger: 'change' }]
 })
 
 const emit = defineEmits(['updateValue', 'successUpload'])
@@ -95,17 +94,16 @@ const getClipboardImageData = async () => {
 }
 const processImage = async (blob: Blob): Promise<void> => {
   const reader = new FileReader()
-  reader.readAsArrayBuffer(blob)
+  reader.readAsDataURL(blob)
   reader.onload = async () => {
     const url = URL.createObjectURL(blob)
     uploadForm.imageUrl = url
     const obj = {
-      owner: config.owner,
-      repo: config.repo,
       path: config.path,
       thumbnailPath: config.thumbnailPath,
       message: config.message,
       content: reader.result,
+      thumbnailContent: '',
       category_name: getCategoryName(uploadForm.categoryId, userStore.categories),
       category_id: uploadForm.categoryId,
       name: '',
@@ -114,7 +112,8 @@ const processImage = async (blob: Blob): Promise<void> => {
         imgUrl: url,
         loading: false
       },
-      input: false
+      input: false,
+      uploadedUrl: ''
     }
     upload.files = [obj]
   }
@@ -129,23 +128,30 @@ const startUpload = async (): Promise<any> => {
   if (!ruleFormRef.value) return
   return await ruleFormRef.value.validate(async (valid, fields) => {
     if (valid) {
-      const file = upload.files[0]
-      if (!file) {
-        ElMessage.closeAll()
-        throw ElMessage.error('图片呢')
-      }
-      file.category_id = uploadForm.categoryId
-      file.category_name = getCategoryName(uploadForm.categoryId, userStore.categories)
-      file.temp!.loading = status.upload
-      file.name = !uploadForm.name ? String(Date.now()) : uploadForm.name
-      const res = await uploadSubsectionApi(file)
-      if (res && res.success === 1) {
-        file.uploadedUrl = res.data && res.data.img_url
-        file.input = true
-        emit('successUpload', [file], true)
-      } else {
-        file.input = false
-        ElMessage.error('上传超时')
+      try {
+        const file = upload.files[0]
+        if (!file) {
+          ElMessage.closeAll()
+          throw ElMessage.error('图片呢')
+        }
+
+        file.category_name = getCategoryName(uploadForm.categoryId, userStore.categories)
+        file.temp!.loading = status.upload
+        emit('updateValue', true)
+        const resStatus = await uploadFile(file, uploadForm.categoryId!, status)
+        if (resStatus === true) {
+          emit('successUpload', [file], true, uploadForm.categoryId)
+        }
+        // if (res && res.success === 1) {
+        //   file.uploadedUrl = res.data && res.data.img_url
+        //   file.input = true
+        //   emit('successUpload', [file], true)
+        // } else {
+        //   file.input = false
+        //   ElMessage.error('上传超时')
+        // }
+      } finally {
+        emit('updateValue', false)
       }
     } else {
       console.error('error submit!', fields)

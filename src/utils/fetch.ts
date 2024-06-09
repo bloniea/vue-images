@@ -1,4 +1,4 @@
-interface FetchOpts extends RequestInit {
+export interface FetchOpts extends RequestInit {
   timeout?: number
   headers?: {
     [key: string]: string
@@ -8,9 +8,9 @@ interface FetchOpts extends RequestInit {
 interface BfetchType {
   fetchOpts: FetchOpts
   create: (url: string, opts: FetchOpts) => Promise<Response>
-  get: (url: string) => Promise<Response>
+  get: (url: string, opts: FetchOpts) => Promise<Response>
   post: (url: string, data: { [key: string]: any }, opts: FetchOpts) => Promise<Response>
-  delete: (url: string) => Promise<Response>
+  delete: (url: string, opts: FetchOpts) => Promise<Response>
   put: (url: string, data: { [key: string]: any }, opts: FetchOpts) => Promise<Response>
 }
 /**
@@ -117,8 +117,9 @@ class Bfetch implements BfetchType {
    * @param url 请求url
    * @returns 返回跟fetch一样的响应
    */
-  async get(url: string): Promise<Response> {
-    return await this.create(url)
+  async get(url: string, opts: FetchOpts = {}): Promise<Response> {
+    delete opts.method
+    return await this.create(url, opts)
   }
   /**
    * post 请求
@@ -129,6 +130,7 @@ class Bfetch implements BfetchType {
    */
   async post(url: string, data: { [key: string]: any }, opts: FetchOpts = {}): Promise<Response> {
     // opts.headers['Content-Type']=''
+    delete opts.method
     return await this.create(url, {
       method: 'POST',
       body: data instanceof FormData ? data : JSON.stringify(data),
@@ -140,8 +142,9 @@ class Bfetch implements BfetchType {
    * @param url 请求url
    * @returns 返回跟fetch一样的响应
    */
-  async delete(url: string): Promise<Response> {
-    return await this.create(url, { method: 'DELETE' })
+  async delete(url: string, opts: FetchOpts = {}): Promise<Response> {
+    delete opts.method
+    return await this.create(url, { method: 'DELETE', ...opts })
   }
   /**
    * put 请求
@@ -151,6 +154,7 @@ class Bfetch implements BfetchType {
    * @returns 返回跟fetch一样的响应
    */
   async put(url: string, data: { [key: string]: any }, opts: FetchOpts = {}): Promise<Response> {
+    delete opts.method
     return await this.create(url, {
       ...opts,
       method: 'PUT',

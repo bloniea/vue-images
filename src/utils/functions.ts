@@ -1,6 +1,12 @@
 import type { Category, FileData } from './types'
 import { sha256 } from 'js-sha256'
-
+import { delImageApi, uploadImageFileApi, type UploadRes } from './uploadApi'
+import { config } from './config'
+import { uploadImageApi } from './fetchApi'
+import type { MessageHandler } from 'element-plus'
+import { useUserStore } from '@/stores/counter'
+import pinia from '@/stores/piniaInstance'
+const userStore = useUserStore(pinia)
 export const generateRandomString = (length: number) => {
   let result = ''
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
@@ -35,6 +41,10 @@ export const clearStore = () => {
   delStorage('refresh_token')
   delStorage('token')
   delStorage('upload_token')
+  userStore.stateUpdate('token', '')
+  userStore.stateUpdate('loginStatus', false)
+  userStore.stateUpdate('user', undefined)
+  userStore.stateUpdate('upload_token', '')
 }
 
 export const toNumber = (num: any) => {
@@ -182,4 +192,104 @@ export const createThumbnail = async (base64Data: string) => {
   // 将 Canvas 转换为 base64 编码的图片数据
   const thumbnail = canvas.toDataURL('image/jpeg')
   return thumbnail
+}
+
+interface UploadStatus {
+  upload: string
+  err: string
+  success: boolean
+}
+export const uploadFile = async (
+  item: FileData,
+  id: number,
+  status: UploadStatus
+): Promise<boolean> => {
+  item.category_id = id
+  item.temp && (item.temp.loading = status.upload)
+  item.name = getName(item.name)
+  // 保存上传成功响应
+  let thumbnaiRes: UploadRes | null = null
+  let res: UploadRes | null = null
+
+  let thumbnailUrl: string = ''
+  let url: string = ''
+
+  let errTip: MessageHandler | null = null
+  try {
+    if (!item.content || typeof item.content !== 'string') {
+      console.error('FileReader result is not a string')
+      throw (errTip = ElMessage.error('未知错误,请重试'))
+    }
+    const thumbnailImage = await createThumbnail(item.content)
+    const thumbnailData = {
+      content: thumbnailImage.split(',')[1],
+      message: 'upload'
+    }
+    // 缩略图上传
+    thumbnailUrl = `${config.thumbnailPath}/${item.category_name}/${item.name}.jpeg`
+    thumbnaiRes = await uploadImageFileApi(thumbnailUrl, thumbnailData)
+    if (!thumbnaiRes || thumbnaiRes.code !== 201) {
+      throw (errTip = ElMessage.error('上传超时'))
+    }
+    // 上传原图
+    url = `${config.path}/${item.category_name}/${item.name}.${item.type}`
+    const data = {
+      content: (item.content as string).split(',')[1],
+      message: 'upload'
+    }
+    res = await uploadImageFileApi(url, data)
+    if (!res || res.code !== 201) {
+      deleteImage(thumbnailUrl, thumbnaiRes.content.sha, 'del Thumbnail')
+
+      throw (errTip = ElMessage.error('上传超时'))
+    }
+    const uploadReq = {
+      name: item.name,
+      path: url,
+      sha: res.content.sha,
+      thumbnailPath: thumbnailUrl,
+      thumbnailSha: thumbnaiRes.content.sha,
+      category_id: id as number
+    }
+    const uploadRes = await uploadImageApi(uploadReq)
+    if (uploadRes.success === 1) {
+      item.uploadedUrl = url
+      item.input = true
+      item.temp && (item.temp.loading = status.success)
+      return true
+    } else if (uploadRes.status === 401) {
+      userStore.stateUpdate('uploadDialog', false)
+      throw (errTip = ElMessage.error('登录失效'))
+    } else {
+      throw (errTip = ElMessage.error('上传超时'))
+    }
+  } catch (error) {
+    console.error(error)
+    if (!errTip) ElMessage.error('未知错误,请重试')
+    item.temp && (item.temp.loading = status.err)
+    if (thumbnaiRes && thumbnaiRes.content) {
+      await deleteImage(thumbnailUrl, thumbnaiRes.content.sha, 'del Thumbnail')
+    }
+    if (res && res.content) {
+      await deleteImage(url, res.content.sha, 'del image')
+    }
+    return false
+  }
+}
+
+export const deleteImage = async (url: string, sha: string, message: string) => {
+  const delData = { message, sha }
+  await delImageApi(url, delData)
+}
+// 切换分类更改路径
+export const switchCategory = (id: number | string) => {
+  if (isNaN(Number(id))) return
+  const category = userStore.categories.find((item: Category) => item.id === id)
+  if (!category) return
+  const params = new URLSearchParams(window.location.search)
+  params.set('id', String(category.id)) //
+  params.set('category', category.name) // 添加或更新参数
+  const newUrl = `${window.location.pathname}?${params.toString()}`
+  // 更新 URL 不刷新页面
+  history.replaceState(null, '', newUrl)
 }

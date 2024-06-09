@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import qs from 'qs'
-import { httpReq } from './fetch'
+import { httpReq, type FetchOpts } from './fetch'
 import type { FileData, ImagesData, UploadData } from './types'
 
 import { clearStore, cryptoPassword, delStorage, getStorage, saveStorage } from './functions'
 import { config } from './config'
 import { useUserStore } from '@/stores/counter'
 import pinia from '@/stores/piniaInstance'
-import { computed, watch } from 'vue'
+import { computed, reactive, watch } from 'vue'
 
 const userStore = useUserStore(pinia)
 // 初始化请求属性
@@ -132,7 +132,7 @@ interface SaveReq {
   type: string
   url: string
   data: any
-  obt: any
+  obt: FetchOpts
 }
 /**
  * 刷新token
@@ -144,7 +144,7 @@ const refreshToken = async <T>(res: Response): Promise<FetchJson<T>> => {
   if (resJson.status === 401 && resJson.data === 'Token invalid') {
     const refresh_token = getStorage('refresh_token')
     if (!refresh_token) {
-      console.log('refresh_token 不存在')
+      clearStore()
     }
     const refreshRes = await httpReq.post(
       '/api/refresh',
@@ -160,17 +160,40 @@ const refreshToken = async <T>(res: Response): Promise<FetchJson<T>> => {
       // window.localStorage.setItem('refresh_token', refreshResJson.data!.refresh_token)
       // userStore.token = refreshResJson.data.token
       userStore.stateUpdate('token', refreshResJson.data.token)
+      // token.value =
       // httpReq.fetchOpts.headers!.authorization = 'Bearer ' + refreshResJson.data!.token
       const saveReq = <SaveReq | null>getStorage('saveReq')
+
       if (saveReq) {
-        const newRes = await httpReq[saveReq.type](saveReq.url, saveReq.data, saveReq.obt)
-        const newResJson: FetchJson<T> = await newRes.json()
+        if (!saveReq.obt) {
+          saveReq.obt = {
+            headers: {
+              authorization: 'Bearer ' + refreshResJson.data.token
+            }
+          }
+        } else {
+          if (saveReq.obt.headers) {
+            saveReq.obt.headers.authorization = 'Bearer ' + refreshResJson.data.token
+          } else {
+            saveReq.obt.headers = {
+              authorization: 'Bearer ' + refreshResJson.data.token
+            }
+          }
+        }
+        let newRes: Response | null = null
+        if (saveReq.type === 'post' || saveReq.type === 'put') {
+          newRes = await httpReq[saveReq.type](saveReq.url, saveReq.data, saveReq.obt)
+        } else if (saveReq.type === 'delete' || saveReq.type === 'get') {
+          newRes = await httpReq[saveReq.type](saveReq.url, saveReq.obt)
+        }
+        const newResJson: FetchJson<T> = newRes && (await newRes.json())
         return newResJson
       }
     } else {
-      userStore.stateUpdate('token', '')
-      userStore.stateUpdate('loginStatus', false)
-      userStore.stateUpdate('user', undefined)
+      // userStore.stateUpdate('token', '')
+      // userStore.stateUpdate('loginStatus', false)
+      // userStore.stateUpdate('user', undefined)
+      // userStore.stateUpdate('upload_token', '')
       clearStore()
     }
   }
@@ -258,9 +281,14 @@ interface delParamsData {
   sha: string
 }
 
-export const delImageApi = async (id: number, params: delParamsData): Promise<FetchJson<null>> => {
-  const query = qs.stringify(params)
-  const res = await httpReq.delete(`/api/delete/${id}?${query}`)
-  const resJson: FetchJson<null> = await res.json()
-  return resJson
+export const delImageApi = async (id: number): Promise<FetchJson<null>> => {
+  const url = `/api/delete/${id}`
+  const res = await httpReq.delete(`/api/delete/${id}`)
+  // const resJson: FetchJson<null> = await res.json()
+  const obj = { type: 'delete', url }
+  saveStorage('saveReq', obj)
+  return refreshToken<null>(res)
 }
+;('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc5NDAyNzMsInBheWxvYWQiOnsiaW1hZ2VfdXNlcl9pZCI6MX19.eYN2TwJ_FLP0bdD0tULFOeUMkS_McXUT2fLITAjUAz0')
+;('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc5NDAyNzMsInBheWxvYWQiOnsiaW1hZ2VfdXNlcl9pZCI6MX19.eYN2TwJ_FLP0bdD0tULFOeUMkS_McXUT2fLITAjUAz0')
+;('eyJhbGciOiJIUzI1NiIsI3nR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc5NDAxODgsInBheWxvYWQiOnsiaW1hZ2VfdXNlcl9pZCI6MX19.ZnVMgCe-')

@@ -48,7 +48,13 @@
 import { useUserStore } from '@/stores/counter'
 import { reactive, ref, watch } from 'vue'
 import { config } from '@/utils/config'
-import { createThumbnail, getCategoryName, getName, setUploadCategoryName } from '@/utils/functions'
+import {
+  createThumbnail,
+  getCategoryName,
+  getName,
+  setUploadCategoryName,
+  uploadFile
+} from '@/utils/functions'
 import type { FileData } from '@/utils/types'
 import {
   CopyDocument,
@@ -60,7 +66,7 @@ import {
   CloseBold
 } from '@element-plus/icons-vue'
 import type { MessageHandler } from 'element-plus'
-import { delImageApi, uploadImageFileApi } from '@/utils/uploadApi'
+import { delImageApi, uploadImageFileApi, type UploadRes } from '@/utils/uploadApi'
 import { uploadImageApi } from '@/utils/fetchApi'
 
 const userStore = useUserStore()
@@ -70,11 +76,7 @@ const upload = reactive({
   files: [] as FileData[],
   statusCode: false
 })
-const status = reactive({
-  upload: 'uploading',
-  err: 'err',
-  success: true
-})
+
 // input file 上传html元素
 const uploader = ref<HTMLInputElement | null>(null)
 
@@ -92,7 +94,7 @@ const selectFile = async (e: Event) => {
 
         continue
       }
-      console.log(upload.files)
+
       if (upload.files.length >= config.maxLen) {
         ElMessage.closeAll()
         ElMessage.error('单次最多上传' + maxLen + '张')
@@ -119,7 +121,6 @@ const processFile = async (file: File): Promise<void> => {
     reader.onload = async () => {
       const obj = {
         path: config.path,
-
         thumbnailPath: config.thumbnailPath,
         content: reader.result,
         thumbnailContent: '',
@@ -139,6 +140,17 @@ const processFile = async (file: File): Promise<void> => {
   })
 }
 const emit = defineEmits(['updateValue', 'successUpload'])
+/**
+ * 上传ui切换
+ * uploading上传中
+ * err 上传失败
+ * true 上传成功
+ */
+const status = {
+  upload: 'uploading',
+  err: 'err',
+  success: true
+}
 const startUpload = async (): Promise<MessageHandler | undefined | void> => {
   upload.files = setUploadCategoryName(upload.files, upload.uploadCategoryId, userStore.categories)
   const files: FileData[] = upload.files
@@ -154,7 +166,8 @@ const startUpload = async (): Promise<MessageHandler | undefined | void> => {
 
     for (const item of files) {
       if (item.temp && item.temp.loading === status.success) continue
-      await uploadFile(item)
+      const resStatus = await uploadFile(item, upload.uploadCategoryId, status)
+      upload.statusCode = resStatus
     }
     if (upload.statusCode) {
       ElMessage.closeAll()
@@ -165,81 +178,83 @@ const startUpload = async (): Promise<MessageHandler | undefined | void> => {
     emit('updateValue', false)
   }
 }
-const uploadFile = async (item: FileData): Promise<void> => {
-  item.category_id = upload.uploadCategoryId
-  item.temp!.loading = status.upload
-  item.name = getName(item.name)
+// const uploadFile = async (item: FileData): Promise<void> => {
+//   item.category_id = upload.uploadCategoryId
+//   item.temp!.loading = status.upload
+//   item.name = getName(item.name)
+//   // 保存上传成功响应
+//   let thumbnaiRes: UploadRes | null = null
+//   let res: UploadRes | null = null
 
-  try {
-    if (!item.content || typeof item.content !== 'string') {
-      console.error('FileReader result is not a string')
-      throw ElMessage.error('未知错误,请重试')
-    }
-    const thumbnailImage = await createThumbnail(item.content)
-    const thumbnailData = {
-      content: thumbnailImage.split(',')[1],
-      message: 'upload'
-    }
-    // 缩略图上传
-    const thumbnailUrl = `${config.thumbnailPath}/${item.category_name}/${item.name}.jpeg`
-    const thumbnaiRes = await uploadImageFileApi(thumbnailUrl, thumbnailData)
-    if (thumbnaiRes.code !== 201) {
-      throw ElMessage.error('上传超时')
-    }
-    // 上传原图
-    const url = `${config.path}/${item.category_name}/${item.name}.${item.type}`
-    const data = {
-      content: (item.content as string).split(',')[1],
-      message: 'upload'
-    }
-    const res = await uploadImageFileApi(url, data)
-    const delThumbnailData = {
-      message: 'del Thumbnail',
-      sha: thumbnaiRes.content.sha
-    }
-    if (res.code !== 201) {
-      delImageApi(thumbnailUrl, delThumbnailData)
-      throw ElMessage.error('上传超时')
-    }
-    const uploadReq = {
-      name: item.name,
-      path: url,
-      sha: res.content.sha,
-      thumbnailPath: thumbnailUrl,
-      thumbnailSha: thumbnaiRes.content.sha,
-      category_id: upload.uploadCategoryId as number
-    }
-    const uploadRes = await uploadImageApi(uploadReq)
-    if (uploadRes.success === 1) {
-      upload.statusCode = true
-    } else {
-      const delSourceData = {
-        message: 'del image',
-        sha: res.content.sha
-      }
-      upload.statusCode = false
-      await delImageApi(thumbnailUrl, delThumbnailData)
-      await delImageApi(url, delSourceData)
-    }
-  } catch (error) {
-    console.error(error)
-    upload.statusCode = false
-    ElMessage.error('未知错误,请重试')
-  }
+//   let thumbnailUrl: string = ''
+//   let url: string = ''
+//   try {
+//     if (!item.content || typeof item.content !== 'string') {
+//       console.error('FileReader result is not a string')
+//       throw ElMessage.error('未知错误,请重试')
+//     }
+//     const thumbnailImage = await createThumbnail(item.content)
+//     const thumbnailData = {
+//       content: thumbnailImage.split(',')[1],
+//       message: 'upload'
+//     }
+//     // 缩略图上传
+//     thumbnailUrl = `${config.thumbnailPath}/${item.category_name}/${item.name}.jpeg`
+//     thumbnaiRes = await uploadImageFileApi(thumbnailUrl, thumbnailData)
+//     if (!thumbnaiRes || thumbnaiRes.code !== 201) {
+//       throw ElMessage.error('上传超时')
+//     }
+//     // 上传原图
+//     url = `${config.path}/${item.category_name}/${item.name}.${item.type}`
+//     const data = {
+//       content: (item.content as string).split(',')[1],
+//       message: 'upload'
+//     }
+//     res = await uploadImageFileApi(url, data)
+//     const delThumbnailData = {
+//       message: 'del Thumbnail',
+//       sha: thumbnaiRes.content.sha
+//     }
+//     if (!res || res.code !== 201) {
+//       delImageApi(thumbnailUrl, delThumbnailData)
+//       throw ElMessage.error('上传超时')
+//     }
+//     const uploadReq = {
+//       name: item.name,
+//       path: url,
+//       sha: res.content.sha,
+//       thumbnailPath: thumbnailUrl,
+//       thumbnailSha: thumbnaiRes.content.sha,
+//       category_id: upload.uploadCategoryId as number
+//     }
+//     const uploadRes = await uploadImageApi(uploadReq)
+//     if (uploadRes.success === 1) {
+//       item.uploadedUrl = url
+//       upload.statusCode = true
+//     } else {
+//       throw ElMessage.error('上传超时')
+//     }
+//   } catch (error) {
+//     console.error(error)
+//     upload.statusCode = false
+//     item.temp && (item.temp.loading = status.err)
+//     if (thumbnaiRes && thumbnaiRes.content) {
+//       const delThumbnailData = {
+//         message: 'del Thumbnail',
+//         sha: thumbnaiRes.content.sha
+//       }
+//       await delImageApi(thumbnailUrl, delThumbnailData)
+//     }
+//     if (res && res.content) {
+//       const delSourceData = {
+//         message: 'del image',
+//         sha: res.content.sha
+//       }
+//       await delImageApi(url, delSourceData)
+//     }
+//   }
+// }
 
-  // console.log(res)
-  // const res = await uploadSubsectionApi(item)
-  // if (res && res.success === 1) {
-  //   item.temp!.loading = status.success
-  //   item.uploadedUrl = res.data && res.data.img_url
-  //   item.input = true
-  //   upload.statusCode = true
-  // } else {
-  //   item.temp!.loading = status.err
-  //   item.input = false
-  //   upload.statusCode = false
-  // }
-}
 const clearFiles = () => {
   uploader.value && (uploader.value.value = '')
   upload.files = []
@@ -247,7 +262,11 @@ const clearFiles = () => {
 const reUpload = async (file: FileData) => {
   try {
     emit('updateValue', true)
-    await uploadFile(file)
+    if (!upload.uploadCategoryId) {
+      return ElMessage.error('请选择分类')
+    }
+    const resStatus = await uploadFile(file, upload.uploadCategoryId, status)
+    upload.statusCode = resStatus
     const files = upload.files
     for (const item of files) {
       if (item.temp && item.temp.loading !== status.success) {
