@@ -87,6 +87,7 @@ const getClipboardImageData = async () => {
     return ElMessage.error('剪贴板不存在图片')
   } catch (error) {
     console.error('获取剪贴板内容失败：', error)
+    ElMessage.error('该方法不可用,请通过文件上传方式')
   } finally {
     upload.btn = false
     emit('updateValue', false)

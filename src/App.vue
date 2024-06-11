@@ -30,7 +30,7 @@
             >
               <template #placeholder>
                 <div class="image-slot">
-                  <el-image :src="im"></el-image>
+                  <el-image :src="im" fit="cover"></el-image>
                 </div> </template
             ></el-image>
             <div class="img-title">{{ item.name }}</div>
@@ -57,7 +57,7 @@
 
 <script lang="ts" setup>
 import { computed, h, nextTick, reactive, ref, render, watch, type Ref } from 'vue'
-import type { FileData, ImagesData } from './utils/types'
+import type { ImagesData } from './utils/types'
 import { useUserStore } from './stores/counter'
 import { delImageApi, getImagesApi } from './utils/fetchApi'
 import { config } from '@/utils/config'
@@ -66,7 +66,7 @@ import { CloseBold } from '@element-plus/icons-vue'
 import { deleteImage, switchCategory } from './utils/functions'
 const userStore = useUserStore()
 const loading: Ref<boolean> = ref(true)
-const im = '@/assets/load.gif'
+const im = '/load.gif'
 
 // import { ref } from 'vue'
 // import MyFooter from '@/components/MyFooter/MyFooter.vue'
@@ -134,14 +134,6 @@ const delImage = async (item: ImagesData) => {
     type: 'warning'
   })
     .then(async () => {
-      const params = {
-        owner: config.owner,
-        repo: config.repo,
-        thumbnailPath: item.thumbnailpath,
-        path: item.path,
-        thumbnailSha: item.thumbnailsha,
-        sha: item.sha
-      }
       const res = await delImageApi(item.image_id)
       if (res.success === 1 && res.status === 200) {
         if (Math.ceil((images.total - 1) / images.query.pagesize) < images.query.pagenum) {
