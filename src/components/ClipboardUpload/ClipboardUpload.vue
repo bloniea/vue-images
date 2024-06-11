@@ -138,6 +138,7 @@ const startUpload = async (): Promise<any> => {
 
         file.category_name = getCategoryName(uploadForm.categoryId, userStore.categories)
         file.temp!.loading = status.upload
+        file.name = uploadForm.name
         emit('updateValue', true)
         const resStatus = await uploadFile(file, uploadForm.categoryId!, status)
         if (resStatus === true) {
