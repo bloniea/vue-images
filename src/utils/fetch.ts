@@ -56,7 +56,11 @@ class Bfetch implements BfetchType {
       method: !opts?.method ? 'GET' : opts.method
     }
     // 获取超时时间
-    const timeouted = opts.timeout ? opts.timeout : this.timeout
+    let timeouted: number
+    if (opts.timeout) timeouted = opts.timeout
+    else if (this.fetchOpts.timeout) timeouted = this.fetchOpts.timeout
+    else timeouted = this.timeout
+
     let timeoutId: number | null = null
     let signal: null | AbortSignal = null
 
@@ -67,7 +71,9 @@ class Bfetch implements BfetchType {
       }, timeouted) as unknown as number
     }
     // 获取重试次数
-    this.retry = opts.retry ? opts.retry : this.retry
+
+    if (opts.retry) this.retry = opts.retry
+    else if (this.fetchOpts.retry) this.retry = this.fetchOpts.retry
 
     // 删除多余的属性
     const updatedOpts = opts
@@ -95,6 +101,7 @@ class Bfetch implements BfetchType {
       ...methods,
       signal: signal
     }
+
     try {
       const res = await fetch(url, options)
       if (timeoutId !== null) clearTimeout(timeoutId)

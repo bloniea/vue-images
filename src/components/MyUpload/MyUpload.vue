@@ -49,7 +49,7 @@
           </div>
           <div class="url-input">
             <el-input :value="config.url + item.uploadedUrl" readonly></el-input>
-            <el-button @click="copyUrl(config.url + '/' + item.uploadedUrl)">复制</el-button>
+            <el-button @click="copyUrl(config.url + item.uploadedUrl)">复制</el-button>
           </div>
         </div>
       </div>

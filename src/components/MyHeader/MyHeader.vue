@@ -174,30 +174,36 @@ onMounted(() => {
 })
 // 获取分类
 const getCategories = async () => {
-  const res = await getImagesCategories()
+  try {
+    const res = await getImagesCategories()
 
-  if (res.success === 1) {
-    userStore.categories = res.data!.result
-    categories.value = [...res.data!.result, ...[{ id: 0, name: 'all' }]]
+    if (res.success === 1) {
+      userStore.categories = res.data!.result
+      categories.value = [...res.data!.result, ...[{ id: 0, name: 'all' }]]
 
-    // 解析 URL，获取参数部分
-    const paramsString = window.location.search
-    // 将参数字符串解析为对象
-    const searchParams = new URLSearchParams(paramsString)
-    // 获取特定参数的值
-    const category = searchParams.get('category')
-    const paramsId = searchParams.get('id')
-    const id = paramsId && parseInt(paramsId)
-    if ((id && !isNaN(id)) || category) {
-      const activeCategory =
-        (id && res.data!.result.find((c: Category) => c.id === id)) ||
-        (category && res.data!.result.find((c: Category) => c.name === category))
+      // 解析 URL，获取参数部分
+      const paramsString = window.location.search
+      // 将参数字符串解析为对象
+      const searchParams = new URLSearchParams(paramsString)
+      // 获取特定参数的值
+      const category = searchParams.get('category')
+      const paramsId = searchParams.get('id')
+      const id = paramsId && parseInt(paramsId)
+      if ((id && !isNaN(id)) || category) {
+        const activeCategory =
+          (id && res.data!.result.find((c: Category) => c.id === id)) ||
+          (category && res.data!.result.find((c: Category) => c.name === category))
 
-      userStore.categoryId =
-        activeCategory && activeCategory.id ? activeCategory.id : config.defaultCategoryId
-    } else {
-      userStore.categoryId = config.defaultCategoryId
+        userStore.categoryId =
+          activeCategory && activeCategory.id ? activeCategory.id : config.defaultCategoryId
+      } else {
+        userStore.categoryId = config.defaultCategoryId
+      }
     }
+  } catch (error) {
+    console.error(error)
+    ElMessage.closeAll()
+    ElMessage.error('网络超时')
   }
 }
 

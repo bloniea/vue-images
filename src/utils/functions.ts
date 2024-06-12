@@ -172,22 +172,41 @@ export const setUploadCategoryName = (
 }
 export const createThumbnail = async (base64Data: string) => {
   // 创建一个 Promise 以等待图片加载完成
+
   const img = await new Promise<HTMLImageElement>((resolve, reject) => {
     const image = new Image()
     image.src = base64Data
     image.onload = () => resolve(image)
+
     image.onerror = reject
   })
 
   // 创建 Canvas 并绘制图像
   const canvas = document.createElement('canvas')
-  canvas.width = 400 // 缩略图宽度
-  canvas.height = 400 // 缩略图高度
+  const canvasW = 400,
+    canvasH = 400
+  canvas.width = canvasW // 缩略图宽度
+  canvas.height = canvasH // 缩略图高度
   const ctx = canvas.getContext('2d')
   if (!ctx) {
     throw new Error('Failed to get 2D context')
   }
-  ctx.drawImage(img, 0, 0, 400, 400)
+  const imgW: number = img.width,
+    imgH: number = img.height
+  let sx: number, sy: number, sw, sh
+  if (imgW <= imgH) {
+    sx = 0
+    sy = (imgH - imgW) / 2
+    sw = imgW
+    sh = imgW
+  } else {
+    sx = (imgW - imgH) / 2
+    sy = 0
+    sw = imgH
+    sh = imgH
+  }
+  console.log(sx, sy, sw, sh)
+  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvasW, canvasH)
 
   // 将 Canvas 转换为 base64 编码的图片数据
   const thumbnail = canvas.toDataURL('image/jpeg')

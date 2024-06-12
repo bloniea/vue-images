@@ -289,6 +289,3 @@ export const delImageApi = async (id: number): Promise<FetchJson<null>> => {
   saveStorage('saveReq', obj)
   return refreshToken<null>(res)
 }
-;('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc5NDAyNzMsInBheWxvYWQiOnsiaW1hZ2VfdXNlcl9pZCI6MX19.eYN2TwJ_FLP0bdD0tULFOeUMkS_McXUT2fLITAjUAz0')
-;('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc5NDAyNzMsInBheWxvYWQiOnsiaW1hZ2VfdXNlcl9pZCI6MX19.eYN2TwJ_FLP0bdD0tULFOeUMkS_McXUT2fLITAjUAz0')
-;('eyJhbGciOiJIUzI1NiIsI3nR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc5NDAxODgsInBheWxvYWQiOnsiaW1hZ2VfdXNlcl9pZCI6MX19.ZnVMgCe-')

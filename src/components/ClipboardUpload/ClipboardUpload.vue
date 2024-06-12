@@ -74,9 +74,11 @@ const getClipboardImageData = async () => {
   try {
     const clipboardItems = await navigator.clipboard.read()
     for (const clipboardItem of clipboardItems) {
+      // console.log(clipboardItem.types)
       for (const type of clipboardItem.types) {
         if (/^image\//.test(type)) {
           const blob = await clipboardItem.getType(type)
+          // console.log(blob)
           await processImage(blob)
           emit('updateValue', false)
           return // 如果找到了图片类型，就不再检查其他类型
@@ -93,6 +95,7 @@ const getClipboardImageData = async () => {
     emit('updateValue', false)
   }
 }
+
 const processImage = async (blob: Blob): Promise<void> => {
   const reader = new FileReader()
   reader.readAsDataURL(blob)

@@ -88,13 +88,18 @@ const getImages = async () => {
   loading.value = true
   const id = userStore.categoryId as number
   if (!isNaN(id)) {
-    const res = await getImagesApi(images.query)
-
-    if (res.success === 1) {
-      if (!res.data) return
-      images.total = Number(res.data.total)
-      loading.value = false
-      images.list = res.data.result
+    try {
+      const res = await getImagesApi(images.query)
+      if (res.success === 1) {
+        if (!res.data) return
+        images.total = Number(res.data.total)
+        loading.value = false
+        images.list = res.data.result
+      }
+    } catch (error) {
+      console.error(error)
+      ElMessage.closeAll()
+      ElMessage.error('网络超时')
     }
   }
 }
@@ -132,9 +137,15 @@ const delImage = async (item: ImagesData) => {
     confirmButtonText: 'OK',
     cancelButtonText: 'Cancel',
     type: 'warning'
-  })
-    .then(async () => {
+  }).then(async () => {
+    try {
+      ElMessage.closeAll()
+      ElMessage.info({
+        message: '正在删除...',
+        duration: 0
+      })
       const res = await delImageApi(item.image_id)
+
       if (res.success === 1 && res.status === 200) {
         if (Math.ceil((images.total - 1) / images.query.pagesize) < images.query.pagenum) {
           images.query.pagenum--
@@ -146,18 +157,16 @@ const delImage = async (item: ImagesData) => {
         await deleteImage(item.path, item.sha, 'del image')
       } else if (res.success === 0 && res.status === 404) {
         ElMessage.closeAll()
-        ElMessage.success('数据已不存在')
+        ElMessage.error('数据已不存在')
       } else {
         ElMessage.closeAll()
-        ElMessage.success('网络超时')
+        ElMessage.error('网络超时')
       }
-    })
-    .catch(() => {
-      ElMessage({
-        type: 'info',
-        message: '取消删除'
-      })
-    })
+    } catch (error) {
+      ElMessage.closeAll()
+      ElMessage.error('网络超时')
+    }
+  })
 }
 const showViewer = () => {
   nextTick(async () => {
