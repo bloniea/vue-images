@@ -10,7 +10,7 @@ export const config = {
   loading_url:
     'https://cdn.jsdelivr.net/gh/bloniea/images-bed@main//images/web/loading_1718135482159_496.gif', // 页面的load gif图片
   default_avatar:
-    'https://cdn.jsdelivr.net/gh/bloniea/images-bed@main//images/web/default_avatar_1718135794754_446.png',
+    'https://cdn.jsdelivr.net/gh/bloniea/images-bed@main/images/web/default_avatar_1718135794754_446.png',
   maxsize: 20, // 支持的图片大小,单位mb
   maxLen: 8, //单次最多选择的图片数量
   path: 'images', // 存放仓库的原图路径

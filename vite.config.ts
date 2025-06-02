@@ -41,7 +41,7 @@ export default defineConfig({
     proxy: {
       // 代理所有以 /api 开头的请求到另一个服务器
       '/api': {
-        target: 'https://blog.api.bloniea.com/image/v1/',
+        target: 'https://blog.api.bloniea.my/image/v1/',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
         timeout: 60000, // 增加超时时间（以毫秒为单位），例如 60 秒
